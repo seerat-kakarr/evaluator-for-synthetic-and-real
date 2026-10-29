@@ -25,19 +25,15 @@
 ### 1. Problem formulation and social impact
 
 - **Problem:** Nonprofits spend a lot of time figuring out which grants they can actually apply for. Finding grant listings isn’t the hard part. The hard part is reading each one closely enough to know whether they’re eligible, whether it’s worth their time, and when it’s due. We’re building a system that takes a nonprofit’s profile and a list of grants, determines eligibility and fit, and produces recommendations grounded in evidence from the original grant sources.
-  
 - **Intended users:** Who would use the system, and for what decisions or activities?
-  
 - **Inputs and outputs:** The system takes in a nonprofit's profile and a list of grants, and it returns a ranked list where each grant is marked eligible, not eligible, or unsure, along with a short reason and quotes from the source that back it up.
-  
 - **Success criteria:** A grant writer should be able to trust our shortlist without re-reading every grant page. That means the system rarely marks a grant eligible when it isn't, and it says "unsure" when the information is missing instead of guessing.
-  
 - **Constraints and risks:** The main risk is the AI making things up, like eligibility rules or deadlines that aren't actually in the grant. The grant data is also messy, and some links may be outdated. Telling an org they're eligible when they're not is worse than missing a grant, since they could waste days on an application.
 
 ### 2. Proposed technical approach
 
 - **Pipeline:** This pipeline takes a nonprofit's profile and a spreadsheet of grant opportunities, removes all the opportunities which will fail known eligibility requirements, and ranks the remaining grants via semantic relevance. In this case, each recommendation will include a score (how good the rec is), the eligibility checks, and additional evidence. We use an LLM to generate a brief explanation of the grant fit for a nonprofit.
-- **Baseline(s):** For a basic prototype, we're using a simple keyword-overlap matcher with deterministic eligibility checks. Grants that don't pass requirements like having expired deadlines or incompatible organization types will be excluded when providing recommendations. In addition, if there's missing information in any grant, that'll be marked as unverified. For grants that pass these deterministic checks, they will be ranked by the proportion of nonprofit mission/description keywords which can be found in the grant's own description and requirements. Thus, this would be a good baseline for measuring whether semantic similarity does improve recommendation relevance.
+- **Baseline(s):** To evaluate our pipeline, we're using a simple keyword-overlap matcher with deterministic eligibility checks. Grants that don't pass requirements like having expired deadlines or incompatible organization types will be excluded when providing recommendations. In addition, if there's missing information in any grant, that'll be marked as unverified. For grants that pass these deterministic checks, they will be ranked by the proportion of nonprofit mission/description keywords which can be found in the grant's own description and requirements. Thus, this would be a good baseline for measuring whether semantic similarity does improve recommendation relevance.
 - **Proposed models/tools:**
   - [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — Open source model that converts nonprofit descriptions and grant requirements into embeddings for ranking opportunities using cosine similarity. Selected as a lightweight model suited to semantic search.
   - [FLAN-T5-small](https://huggingface.co/google/flan-t5-small) — Open source model that generates optional explanations of potential fit using retrieved grant evidence. Its explanations will require evaluation and it does not determine eligibility or scores.
@@ -45,9 +41,9 @@
 
 ### 3. Proposed data
 
-| Dataset/source | Link or access instructions                                   | Purpose                           | Size / languages | Privacy or usage considerations |
-| -------------- | ------------------------------------------------------------- | --------------------------------- | ---------------- | ------------------------------- |
-| [Ardook Data]         | [URL](https://docs.google.com/spreadsheets/d/1o_9ft5_eBtUpgBe9rj8TeUIXbJkzKGT7QQRXFxfDqdA/edit?gid=0#gid=0) or other instructions] | [Training] | [reference labels for evaluation]        | [Notes]                         |
+| Dataset/source | Link or access instructions                                                                                                        | Purpose    | Size / languages                  | Privacy or usage considerations |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------- | ------------------------------- |
+| [Ardook Data]  | [URL](https://docs.google.com/spreadsheets/d/1o_9ft5_eBtUpgBe9rj8TeUIXbJkzKGT7QQRXFxfDqdA/edit?gid=0#gid=0) or other instructions] | [Training] | [reference labels for evaluation] | [Notes]                         |
 
 - **Data preparation:** [Cleaning, anonymization, annotation, splitting, deduplication, etc.]
 - **Data limitations:** [What is missing, noisy, or uncertain?]
