@@ -25,7 +25,7 @@ class SemanticEncoder:
         from sentence_transformers import SentenceTransformer
 
         self.model_name = model_name
-        self.model = SentenceTransformer(model_name)
+        self.model = SentenceTransformer(model_name, device="cpu")
 
     def encode(self, texts: list[str]) -> np.ndarray:
         return self.model.encode(

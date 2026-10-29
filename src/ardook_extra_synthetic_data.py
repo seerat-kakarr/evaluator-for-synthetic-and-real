@@ -12,6 +12,7 @@ Output is seeded, so reruns are identical.
 import json
 import random
 import sqlite3
+from contextlib import closing
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -249,7 +250,7 @@ def build(path: Path = DB_PATH, seed: int = 166, n_grants: int = 150, n_profiles
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.unlink(missing_ok=True)
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         frame = pd.DataFrame(grants, columns=list(COLUMNS) + ["Focus"])
         frame.to_sql("grants", db, index=False)
         pd.DataFrame(rules).to_sql("rules", db, index=False)
@@ -257,16 +258,17 @@ def build(path: Path = DB_PATH, seed: int = 166, n_grants: int = 150, n_profiles
         db.executemany("INSERT INTO profiles VALUES (?, ?, ?, ?)", profiles)
         db.execute("CREATE TABLE matches (profile_id, source_row, label)")
         db.executemany("INSERT INTO matches VALUES (?, ?, ?)", matches)
+        db.commit()
 
 
 def load_grants(path: Path = DB_PATH) -> pd.DataFrame:
     """Cleaned the same way as the real tracker, so Pipeline treats both identically."""
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         return clean_grants(pd.read_sql("SELECT * FROM grants", db))
 
 
 def load_checker(path: Path = DB_PATH) -> EligibilityChecker:
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         rows = pd.read_sql("SELECT * FROM rules", db)
     checker_rules: dict[str, list[EligibilityRule]] = {}
     for row in rows.itertuples():
@@ -278,14 +280,14 @@ def load_checker(path: Path = DB_PATH) -> EligibilityChecker:
 
 
 def load_profiles(path: Path = DB_PATH) -> pd.DataFrame:
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         profiles = pd.read_sql("SELECT * FROM profiles", db)
     profiles["attributes"] = profiles["attributes"].map(json.loads)
     return profiles
 
 
 def load_matches(path: Path = DB_PATH) -> pd.DataFrame:
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         return pd.read_sql("SELECT * FROM matches", db)
 
 
