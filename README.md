@@ -32,11 +32,12 @@
 
 ### 2. Proposed technical approach
 
-- **Pipeline:** [List the main steps from input to output.]
-- **Baseline(s):** [Describe the simplest end-to-end method you can implement.]
-- **Proposed models/tools:** [Name, purpose, and link to each Hugging Face model or other resource.]
-  - [Model name](https://huggingface.co/models) — [What it will do; why selected]
-- **Alternative approach:** [What will you try if the baseline underperforms?]
+- **Pipeline:** This pipeline takes a nonprofit's profile and a spreadsheet of grant opportunities, removes all the opportunities which will fail known eligibility requirements, and ranks the remaining grants via semantic relevance. In this case, each recommendation will include a score (how good the rec is), the eligibility checks, and additional evidence. We use an LLM to generate a brief explanation of the grant fit for a nonprofit.
+- **Baseline(s):** For a basic prototype, we're using a simple keyword-overlap matcher with deterministic eligibility checks. Grants that don't pass requirements like having expired deadlines or incompatible organization types will be excluded when providing recommendations. In addition, if there's missing information in any grant, that'll be marked as unverified. For grants that pass these deterministic checks, they will be ranked by the proportion of nonprofit mission/description keywords which can be found in the grant's own description and requirements. Thus, this would be a good baseline for measuring whether semantic similarity does improve recommendation relevance.
+- **Proposed models/tools:**
+  - [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — Open source model that converts nonprofit descriptions and grant requirements into embeddings for ranking opportunities using cosine similarity. Selected as a lightweight model suited to semantic search.
+  - [FLAN-T5-small](https://huggingface.co/google/flan-t5-small) — Open source model that generates optional explanations of potential fit using retrieved grant evidence. Its explanations will require evaluation and it does not determine eligibility or scores.
+- **Alternative approach:** Given that our current pipeline fails, we will try to train our own ML model in order to generate accurate recommendations for any given nonprofit. Currently, we're leveraging similarity search and RAG to see if this implementation can suffice for making sure that nonprofits have the most precise and accurate recommendations for their specific needs.
 
 ### 3. Proposed data
 
@@ -59,9 +60,9 @@
 
 ### 5. Team responsibilities
 
-| Member | Primary responsibility                            | Specific Weekly contribution | Planned next task |
-| ------ | ------------------------------------------------- | ---------------------------- | ----------------- |
-| [Name] | [Data / models / evaluation / integration / etc.] | [Actual work completed]      | [Next action]     |
+| Member   | Primary responsibility                   | Specific Weekly contribution                                                                                                                                                      | Planned next task                                                                                                  |
+| -------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Jason Wu | Build the initial RAG pipeline prototype | Completed the initial prototype, including grant data ingestion and cleaning, deterministic eligibility checks, semantic similarity scoring, and optional generated explanations. | Begin productionizing the system by scaling the pipeline to process requests concurrently for multiple nonprofits. |
 
 ---
 
