@@ -56,11 +56,15 @@
 
 | Metric / test                    | What it measures    | How it will be calculated | Target / success criterion |
 | -------------------------------- | ------------------- | ------------------------- | -------------------------- |
-| [Metric - e.g Accuracy, F1, AoC] | [Quality dimension] | [Method/ Formula]         | [Target]                   |
+| Precision@5 | How many of the top 5 recommendations are grants the nonprofit should actually get | Count the top 5 grants that are labeled a match for the profile, divided by 5, then average over all test profiles | At least 0.60. We measured 0.43 on the synthetic set with MiniLM, so this is the number we most need to improve |
+| Recall@5 | Whether the good grants show up in the shortlist | Matches found in the top 5 divided by the number of matches that exist (capped at 5), averaged over profiles | At least 0.70. We measured 0.55 on the synthetic set |
+| False-eligible rate | How often we recommend a grant the nonprofit can't apply for | Recommended grants that fail a known rule (entity type, region, revenue) divided by all recommended grants | 0. This matters most, since a wrong "eligible" wastes the most time. We measured 0 on the synthetic set |
+| Evidence match | Whether every quote and deadline we show is really in the grant source | Check that each evidence string appears word for word in the source row of the spreadsheet | 100% |
+| Unknown handling | Whether missing information is marked unverified instead of guessed | For test profiles with a missing attribute (revenue left blank, for example), count the grants whose check comes back "unknown" instead of pass or fail | 100% |
 
-- **Evaluation examples:** [How will you build or select a development set?]
-- **Human verification:** [If relevant, who will check outputs and how?]
-- **Failure cases to watch:** [At least two anticipated risks]
+- **Evaluation examples:** We have two sets and keep them separate. The first is a synthetic set made to look like the Ardook spreadsheet: 150 fake grants, 200 fake nonprofit profiles, and a label for every pair (match, ineligible, or unrelated). Its labels come from the same eligibility rules the pipeline runs, so it can test the plumbing and the ranking, but it can't tell us whether the rules themselves are right. The second is the real 37-grant tracker. For that one, each of us will write a few nonprofit profiles and mark by hand which grants fit after reading the official source. We use the synthetic set while building and the real tracker for the numbers we report.
+- **Human verification:** The three of us will check a sample of recommendations against the official grant page, looking at whether the eligibility status, deadline, and quotes are correct. We'll also read the generated explanations next to the evidence they were given and mark any sentence that isn't supported. If we can reach a grant writer at Ardook or a nonprofit, we'll ask them to review the final shortlist for a few profiles.
+- **Failure cases to watch:** (1) The generated explanation says something that isn't in the grant, since FLAN-T5-small is a small model. It never decides eligibility, but a reader could still believe it. (2) Most requirements are free text that we can't turn into rules, so many grants will stay "needs verification" and the shortlist may look less certain than it is. (3) The tracker has old deadlines and links, so a grant can look open when it is closed. (4) The synthetic data is cleaner than the real data, so scores on it will look better than real performance. (5) Similarity can rank a grant high because of shared words in the program name and not because the mission fits.
 
 ### 5. Team responsibilities
 

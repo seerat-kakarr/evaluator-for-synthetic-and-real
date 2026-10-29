@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.ingest import load_grants
+from src.vector_store import VectorStore
 
 
 class Embedder(Protocol):
@@ -23,6 +24,7 @@ class SemanticEncoder:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         from sentence_transformers import SentenceTransformer
 
+        self.model_name = model_name
         self.model = SentenceTransformer(model_name)
 
     def encode(self, texts: list[str]) -> np.ndarray:
@@ -190,6 +192,7 @@ class Pipeline:
         embedder: Embedder | None = None,
         checker: EligibilityChecker | None = None,
         generator: Generator | None = None,
+        store: VectorStore | None = None,
         *,
         workbook: str = "Ardook_data.xlsx",
     ):
@@ -204,15 +207,22 @@ class Pipeline:
         }
         if unknown:
             raise ValueError(f"Rules reference unknown programs: {sorted(unknown)}")
+        self.store = store or VectorStore()
         documents = [
             "\n".join(f"{key}: {text(grant[key])}" for key in self.RETRIEVAL_FIELDS)
             for grant in self.grants
         ]
-        self.embeddings = (
-            self._normalize(self.embedder.encode(documents)) if documents else None
-        )
-        if self.embeddings is not None and len(self.embeddings) != len(documents):
-            raise ValueError("Expected one embedding per grant")
+        ids = [str(grant["source_row"]) for grant in self.grants]
+        # Vectors are tied to the model that made them; custom embedders can expose model_name.
+        embedder_name = getattr(self.embedder, "model_name", type(self.embedder).__name__)
+        # Re-embed only when the grant text or the embedding model changed since the last run.
+        if not self.store.is_current(ids, documents, embedder_name):
+            embeddings = (
+                self._normalize(self.embedder.encode(documents)) if documents else None
+            )
+            if embeddings is not None and len(embeddings) != len(documents):
+                raise ValueError("Expected one embedding per grant")
+            self.store.replace(ids, documents, embeddings, embedder_name)
 
     @staticmethod
     def _normalize(vectors: np.ndarray) -> np.ndarray:
@@ -237,11 +247,12 @@ class Pipeline:
         if not self.grants:
             return []
         query = self._normalize(self.embedder.encode([profile.description]))
-        if query.shape != (1, self.embeddings.shape[1]):
-            raise ValueError("Expected one query embedding with the index dimension")
-        similarities = (self.embeddings @ query.T).ravel()
+        if query.shape[0] != 1:
+            raise ValueError("Expected one query embedding")
+        similarities = self.store.similarities(query)
         recommendations = []
-        for grant, similarity in zip(self.grants, similarities):
+        for grant in self.grants:
+            similarity = similarities[str(grant["source_row"])]
             checks = self.checker.check(grant, profile, as_of or date.today())
             if (
                 any(check.status == "fail" for check in checks)
