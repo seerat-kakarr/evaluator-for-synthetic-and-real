@@ -185,21 +185,43 @@
 ## Setup and Reproducibility (keep updated)
 
 ### Requirements
-[Python version, libraries, compute requirements, model access]
+Python 3.12, pandas, and openpyxl. Loading and cleaning run locally without model access.
 
 ### Installation
 ```bash
-# Add installation commands here
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 ### Run the system
 ```bash
-# Add an example command here
+python -m src.data Ardook_data.xlsx
 ```
+
+The loader reads only `Grant Tracker` and returns a pandas DataFrame:
+
+```python
+from src.data import load_grants
+
+grants = load_grants("Ardook_data.xlsx")
+```
+
+Cleaning normalizes column names and whitespace, removes entirely empty records,
+and converts priority order to nullable integers. Original application-status and
+deadline text remain available; `applied_bool` represents yes/no/unknown and
+`deadline_date` parses only valid `YYYY-MM-DD` dates. Rolling, partial, and invalid
+dates remain missing in the parsed field. `source_row` identifies the original
+Excel row on `Grant Tracker`.
+
+Amounts, conditional fit ratings, requirements, concerns, and source links remain
+text. No opportunities are deduplicated, scored, or filtered by eligibility or
+deadline. Missing source data stays missing, and the original workbook is not
+modified. This step does not verify source websites.
 
 ### Run evaluation
 ```bash
-# Add an example evaluation command here
+python -m unittest discover -s tests -v
 ```
 
 ### Repository structure
