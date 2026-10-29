@@ -67,6 +67,7 @@
 | -------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Jason Wu | Build the initial RAG pipeline prototype | Completed the initial prototype, including grant data ingestion and cleaning, deterministic eligibility checks, semantic similarity scoring, and optional generated explanations. | Begin productionizing the system by scaling the pipeline to process requests concurrently for multiple nonprofits. |
 | Michael Tiburcio | Add a vector database and fake training data | Saved the grant embeddings in a vector database so they aren't rebuilt every run. Made a fake dataset modeled on the Ardook spreadsheet. | Measure how good the recommendations are on the fake data and improve them. |
+| Seerat Kakar | Evaluate recommendation rankings | Added a comparison of semantic and keyword rankings using the tracker Fit ratings and synthetic labels, plus a recommendation command. | Verify tracker ratings and improve semantic model performance. |
 
 ---
 
